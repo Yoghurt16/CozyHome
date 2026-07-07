@@ -189,7 +189,25 @@ footer{background:var(--soft);border-top:1px solid var(--bd);padding:50px 32px 2
   .pd-info{padding:18px 16px;gap:10px;}
   .pd-price{font-size:1.3rem;}
 }
-</style></head><body>
+/* STRIPE PAYMENT */
+.stripe-wrap{margin-bottom:14px;}
+.stripe-label{display:block;font-size:.72rem;font-weight:600;color:var(--p);margin-bottom:5px;}
+.stripe-field{border:1.5px solid var(--bd);border-radius:5px;padding:11px 12px;background:#fff;transition:border-color var(--tr);}
+.stripe-field.focused{border-color:var(--a);}
+.stripe-field.error{border-color:#e05252;}
+.stripe-error{font-size:.72rem;color:#e05252;margin-top:5px;min-height:16px;}
+.stripe-test{background:#fff8f0;border:1px solid #f0c070;border-radius:5px;padding:10px 14px;font-size:.74rem;color:#9a6010;margin-bottom:14px;line-height:1.7;}
+.stripe-test b{display:block;font-size:.75rem;margin-bottom:2px;}
+.stripe-test code{font-family:monospace;letter-spacing:.5px;font-size:.78rem;background:#fff3dc;padding:1px 5px;border-radius:3px;}
+.stripe-secure{display:flex;align-items:center;gap:6px;font-size:.69rem;color:var(--mu);margin-top:10px;justify-content:center;}
+.pay-spinner-wrap{display:flex;align-items:center;justify-content:center;gap:8px;}
+.pay-spinner{width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.pay-res{padding:12px 14px;border-radius:5px;font-size:.81rem;margin-bottom:12px;display:none;}
+.pay-res.ok{background:#f0faf4;border:1px solid #6dbf8a;color:#2d7a4f;}
+.pay-res.err{background:#fff0f0;border:1px solid #e08080;color:#a03030;}
+</style><script src="https://js.stripe.com/v3/"></script>
+</head><body>
 <div class="ubar">
   <span id="rl">Loading rate...</span>
   <div class="vsep"></div>
@@ -341,13 +359,17 @@ footer{background:var(--soft);border-top:1px solid var(--bd);padding:50px 32px 2
           <div id="pamt" style="font-size:.76rem;color:var(--mu);margin-bottom:10px;"></div>
         </div>
         <div class="fs"><h3 data-en="Card Details" data-zh="&#38134;&#34892;&#21345;&#20449;&#24687;">Card Details</h3>
-          <div class="sn" data-en="Secured by Stripe &mdash; card details are encrypted." data-zh="&#30001;Stripe&#21152;&#23494;&#20445;&#25252;&#12002;">Secured by Stripe &mdash; card details are encrypted.</div>
-          <div class="fg"><label data-en="Card Number *" data-zh="&#21345;&#21495; *">Card Number *</label><input id="fcc" required placeholder="1234 5678 9012 3456" maxlength="19" oninput="fmtCard(this)"/></div>
-          <div class="c3">
-            <div class="fg"><label data-en="Name on Card *" data-zh="&#25345;&#21345;&#20154;&#23713;&#21517; *">Name on Card *</label><input id="fcn" required placeholder="Jane Smith"/></div>
-            <div class="fg"><label data-en="Expiry *" data-zh="&#26377;&#25928;&#26399; *">Expiry *</label><input id="fex" required placeholder="MM/YY" maxlength="5" oninput="fmtExp(this)"/></div>
-            <div class="fg"><label>CVV *</label><input id="fcv" required placeholder="123" maxlength="4"/></div>
+          <div class="stripe-test" id="testBanner">
+            <b>&#9888; Test Mode &#8212; no real money charged</b>
+            Card: <code>4242 4242 4242 4242</code> &nbsp; Expiry: <code>12/29</code> &nbsp; CVC: <code>123</code> &nbsp; ZIP: <code>3000</code>
           </div>
+          <div class="stripe-wrap">
+            <label class="stripe-label" data-en="Card Details *" data-zh="&#21345;&#20449;&#24687; *">Card Details *</label>
+            <div id="stripeCardEl" class="stripe-field"></div>
+            <div class="stripe-error" id="stripeError"></div>
+          </div>
+          <div class="pay-res" id="payRes"></div>
+          <div class="stripe-secure">&#128274; Secured by Stripe &#8212; 256-bit SSL encryption</div>
         </div>
         <button type="submit" class="pb" id="payBtn" data-en="Place Order &amp; Pay" data-zh="&#19979;&#21333;&#25903;&#20184;">Place Order &amp; Pay</button>
       </form>
@@ -361,6 +383,7 @@ footer{background:var(--soft);border-top:1px solid var(--bd);padding:50px 32px 2
     <p data-en="Thank you. Your order has been received." data-zh="&#24863;&#35874;&#24744;&#30340;&#35746;&#36135;&#65281;&#35746;&#21333;&#24050;&#25910;&#21040;&#12002;">Thank you. Your order has been received.</p>
     <p data-en="A confirmation email will be sent shortly." data-zh="&#30830;&#35748;&#37038;&#20214;&#23558;&#24456;&#24555;&#21457;&#36865;&#12002;">A confirmation email will be sent shortly.</p>
     <p class="sid" id="sucId"></p>
+    <p id="sucNote" style="display:none;font-size:.7rem;color:#9a6010;background:#fff8f0;border:1px solid #f0c070;border-radius:4px;padding:6px 10px;margin-bottom:14px;">Test mode &#8212; no real charge was made. Swap in your live Stripe key to go live.</p>
     <button onclick="closeSuc()" data-en="Continue Shopping" data-zh="&#32493;&#32493;&#36141;&#29289;">Continue Shopping</button>
   </div>
 </div>
@@ -472,29 +495,165 @@ function updAmt(){
 function closeCO(){document.getElementById("mbg").classList.remove("on");}
 function fmtCard(el){let v=el.value.replace(/\D/g,"").substring(0,16);el.value=v.replace(/(\d{4})/g,"$1 ").trim();}
 function fmtExp(el){let v=el.value.replace(/\D/g,"");if(v.length>=2)v=v.substring(0,2)+"/"+v.substring(2,4);el.value=v;}
-function placeOrder(e){
-  e.preventDefault();const btn=document.getElementById("payBtn");
-  btn.textContent=T[lang].proc;btn.disabled=true;
-  const tot=cart.reduce((s,i)=>s+(i.price*i.qty),0),sh=tot>=80?0:9.95,g=tot+sh;
-  const pc=document.querySelector("input[name=pc]:checked")?.value||"AUD";
-  const order={orderId:"CH-"+Date.now(),timestamp:new Date().toISOString(),
-    customer:{name:document.getElementById("fn").value,email:document.getElementById("fe").value,
-      phone:document.getElementById("fp").value,wechat:document.getElementById("fw").value,
-      address:{street:document.getElementById("fa").value,city:document.getElementById("fc").value,
-        state:document.getElementById("fs2").value,postcode:document.getElementById("fpc").value,country:"Australia"}},
-    items:cart.map(i=>({id:i.id,name:i.en,price:i.price,qty:i.qty})),
-    totals:{subtotal:tot,shipping:sh,grandTotal:g,currency:pc,audToCny:rate,amountCNY:pc==="CNY"?parseFloat(cny(g)):null},
-    payment:{method:"stripe",status:"pending"}};
-  console.log("ORDER:",JSON.stringify(order,null,2));
-  // TODO: fetch("/api/orders",{method:"POST",body:JSON.stringify(order)})
-  setTimeout(()=>{closeCO();document.getElementById("sucId").textContent="Order ID: "+order.orderId;
-    document.getElementById("sucBg").classList.add("on");cart=[];saveC();renderCart();
-    btn.textContent=T[lang].pay;btn.disabled=false;},1800);
+
+// ── STRIPE INIT ──
+// TODO: Replace this test key with your real key from dashboard.stripe.com
+// Test key format:  pk_test_51...
+// Live key format:  pk_live_51...
+const STRIPE_PK = 'pk_test_REPLACE_WITH_YOUR_STRIPE_PUBLISHABLE_KEY';
+let stripe, stripeCard, cardComplete = false;
+
+function initStripe() {
+  if (typeof Stripe === 'undefined') { setTimeout(initStripe, 400); return; }
+  stripe = Stripe(STRIPE_PK);
+  const els = stripe.elements();
+  stripeCard = els.create('card', {
+    style: {
+      base: {
+        fontFamily: '"Segoe UI", system-ui, sans-serif',
+        fontSize: '15px',
+        color: '#333333',
+        '::placeholder': { color: '#aaaaaa' },
+        iconColor: '#b07d62'
+      },
+      invalid: { color: '#e05252', iconColor: '#e05252' }
+    }
+  });
+  const el = document.getElementById('stripeCardEl');
+  if (!el) { console.warn('stripeCardEl not found'); return; }
+  stripeCard.mount('#stripeCardEl');
+  stripeCard.on('focus', () => el.classList.add('focused'));
+  stripeCard.on('blur',  () => el.classList.remove('focused'));
+  stripeCard.on('change', ev => {
+    const err = document.getElementById('stripeError');
+    if (ev.error) {
+      err.textContent = ev.error.message;
+      el.classList.add('error');
+    } else {
+      err.textContent = '';
+      el.classList.remove('error');
+    }
+    cardComplete = ev.complete;
+  });
 }
+
+function placeOrder(e) {
+  e.preventDefault();
+  const btn = document.getElementById('payBtn');
+  const errEl = document.getElementById('stripeError');
+  const resEl = document.getElementById('payRes');
+
+  if (!cardComplete) {
+    errEl.textContent = lang === 'zh' ? '\u8bf7\u586b\u5199\u5b8c\u6574\u7684\u94f6\u884c\u5361\u4fe1\u606f' : 'Please complete your card details';
+    document.getElementById('stripeCardEl').classList.add('error');
+    return;
+  }
+
+  btn.innerHTML = '<span class="pay-spinner-wrap"><span class="pay-spinner"></span>' +
+    (lang === 'zh' ? '\u5904\u7406\u4e2d...' : 'Processing...') + '</span>';
+  btn.disabled = true;
+  resEl.style.display = 'none';
+
+  const tot = cart.reduce((s,i) => s + (i.price * i.qty), 0);
+  const sh  = tot >= 80 ? 0 : 9.95;
+  const g   = tot + sh;
+  const pc  = document.querySelector('input[name=pc]:checked')?.value || 'AUD';
+
+  const order = {
+    orderId:   'CH-' + Date.now(),
+    timestamp: new Date().toISOString(),
+    customer: {
+      name:    document.getElementById('fn').value,
+      email:   document.getElementById('fe').value,
+      phone:   document.getElementById('fp').value,
+      wechat:  document.getElementById('fw').value,
+      address: {
+        line1:    document.getElementById('fa').value,
+        city:     document.getElementById('fc').value,
+        state:    document.getElementById('fs2').value,
+        postcode: document.getElementById('fpc').value,
+        country:  'Australia'
+      }
+    },
+    items:  cart.map(i => ({ id:i.id, name:i.en, price:i.price, qty:i.qty })),
+    totals: { subtotal:tot, shipping:sh, grandTotal:g, currency:pc,
+              amountCents: Math.round(g * 100), audToCny:rate,
+              amountCNY: pc === 'CNY' ? parseFloat(cny(g)) : null },
+    payment: { method:'stripe', status:'pending' }
+  };
+
+  // Create payment method (validates card with Stripe)
+  stripe.createPaymentMethod({
+    type: 'card',
+    card: stripeCard,
+    billing_details: {
+      name:  order.customer.name,
+      email: order.customer.email,
+      address: {
+        line1:       order.customer.address.line1,
+        city:        order.customer.address.city,
+        state:       order.customer.address.state,
+        postal_code: order.customer.address.postcode,
+        country:     'AU'
+      }
+    }
+  }).then(result => {
+    if (result.error) {
+      errEl.textContent = result.error.message;
+      document.getElementById('stripeCardEl').classList.add('error');
+      btn.textContent = T[lang].pay;
+      btn.disabled = false;
+      return;
+    }
+
+    // ── Payment method created successfully ──
+    // Log for now — backend will use this to create PaymentIntent
+    console.log('ORDER:', JSON.stringify(order, null, 2));
+    console.log('Stripe PaymentMethod ID:', result.paymentMethod.id);
+    console.log('Amount (cents AUD):', order.totals.amountCents);
+
+    // TODO: When backend is ready, replace above with:
+    // fetch('/api/create-payment-intent', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({
+    //     paymentMethodId: result.paymentMethod.id,
+    //     amount: order.totals.amountCents,
+    //     currency: 'aud',
+    //     orderId: order.orderId,
+    //     customerEmail: order.customer.email
+    //   })
+    // })
+    // .then(r => r.json())
+    // .then(data => {
+    //   if (data.success) { showSuccess(order); }
+    //   else { showError(data.error); }
+    // });
+
+    // Simulate success for now (test mode)
+    setTimeout(() => showSuccess(order), 900);
+  });
+}
+
+function showSuccess(order) {
+  closeCO();
+  document.getElementById('sucId').textContent = 'Order ID: ' + order.orderId;
+  const note = document.getElementById('sucNote');
+  if (note) note.style.display = 'block';
+  document.getElementById('sucBg').classList.add('on');
+  cart = []; saveC(); renderCart();
+  const btn = document.getElementById('payBtn');
+  btn.textContent = T[lang].pay;
+  btn.disabled = false;
+  if (stripeCard) { stripeCard.clear(); cardComplete = false; }
+}
+
+
 function closeSuc(){document.getElementById("sucBg").classList.remove("on");}
 function goTo(id){const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:"smooth"});}
 function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),2500);}
 fetchRate();renderP("all");saveC();renderCart();setLang(lang);
+initStripe();
 
 
 // ── PRODUCT DETAIL MODAL ──
