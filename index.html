@@ -16,7 +16,7 @@ a{text-decoration:none;color:inherit;}
 .vsep{width:1px;height:14px;background:var(--bd);}
 nav{background:#fff;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--bd);}
 .ni{max-width:1200px;margin:0 auto;padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:66px;}
-.logo{font-size:1.4rem;font-weight:300;letter-spacing:3px;text-transform:uppercase;color:var(--p);}
+.logo{display:flex;align-items:center;}.logo img{height:46px;width:auto;object-fit:contain;max-width:160px;}@media(max-width:768px){.logo img{height:36px;max-width:130px;}}@media(max-width:480px){.logo img{height:30px;max-width:110px;}}
 .logo b{font-weight:700;color:var(--a);}
 .nl{display:flex;gap:28px;font-size:.78rem;letter-spacing:.8px;text-transform:uppercase;}
 .nl a{color:var(--mu);cursor:pointer;transition:color var(--tr);}
@@ -271,7 +271,7 @@ footer{background:var(--soft);border-top:1px solid var(--bd);padding:50px 32px 2
 
 <nav>
   <div class="ni">
-    <div class="logo">Aurène <b>Home</b></div>
+    <div class="logo"><img src="aurene-logo.png" alt="Aurène Home"/></div>
     <div class="nl" id="nl">
       <a onclick="goTo('shop')"  data-en="Shop" data-zh="&#21830;&#22478;">Shop</a>
       <a onclick="goTo('cats')"  data-en="Categories" data-zh="&#20998;&#31867;">Categories</a>
@@ -327,7 +327,7 @@ footer{background:var(--soft);border-top:1px solid var(--bd);padding:50px 32px 2
 <footer id="foot">
   <div class="ft">
     <div class="ftb">
-      <div class="logo">Aurène <b>Home</b></div>
+      <div class="logo"><img src="aurene-logo.png" alt="Aurène Home" style="height:36px;"/></div>
       <p data-en="Premium bedroom manchester for every home. Shipping Australia-wide." data-zh="&#36866;&#21512;&#27ỗi&#20491;&#23478;&#24237;&#30340;&#20248;&#36136;&#21381;&#23460;&#29992;&#21697;&#12002;&#28500;&#22823;&#21033;&#20122;&#20840;&#22269;&#37197;&#36865;&#12002;">Premium bedroom manchester. Ships Australia-wide.</p>
     </div>
     <div class="fc"><h4 data-en="Shop" data-zh="&#21830;&#22478;">Shop</h4>
